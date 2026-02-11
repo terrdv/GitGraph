@@ -11,7 +11,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Add CORS middleware for extension support
 app.add_middleware(
     CORSMiddleware,
     allow_origins="http://localhost:3000",
@@ -21,7 +20,7 @@ app.add_middleware(
 )
 
 # Include API routes
-app.include_router(api_router, prefix="")  # ✅ Use config!
+app.include_router(api_router, prefix="")
 
 
 @app.get("/")
@@ -37,7 +36,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "main:app",
-        host="127.0.0.1",  # ✅ Use config!
-        port=8000,  # ✅ Use config!
-        reload=True,  # ✅ Use config!
+        host="127.0.0.1",  
+        port=8000,
+        reload=True, 
     )
