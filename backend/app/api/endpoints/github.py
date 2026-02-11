@@ -2,29 +2,27 @@ import os
 import requests
 from fastapi import APIRouter
 from fastapi import HTTPException
-from dotenv import load_dotenv
+from app.core.config import settings
 import base64
 router = APIRouter()
-load_dotenv()
 
 
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
 @router.get("/")
-def get_repos():
+async def get_repos():
     res = requests.get(
         "https://api.github.com/user/repos",
-        headers={"Authorization": f"Bearer {GITHUB_TOKEN}"},
+        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
     )
     return res.json()
 
 
 @router.get("/{owner}/{repo}/tree")
-def get_repo_tree(owner: str, repo: str):
+async def get_repo_tree(owner: str, repo: str):
     repo_res = requests.get(
         f"https://api.github.com/repos/{owner}/{repo}",
-        headers={"Authorization": f"Bearer {GITHUB_TOKEN}"},
+        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
     )
 
     if repo_res.status_code != 200:
@@ -35,7 +33,7 @@ def get_repo_tree(owner: str, repo: str):
     # 2. get full recursive tree
     tree_res = requests.get(
         f"https://api.github.com/repos/{owner}/{repo}/git/trees/{default_branch}?recursive=1",
-        headers={"Authorization": f"Bearer {GITHUB_TOKEN}"},
+        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
     )
 
     if tree_res.status_code != 200:
@@ -51,12 +49,12 @@ def get_repo_tree(owner: str, repo: str):
 
 
 @router.get("/{owner}/{repo}/file")
-def get_file(owner: str, repo: str, path: str):
+async def get_file(owner: str, repo: str, path: str):
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
 
     res = requests.get(
         url,
-        headers={"Authorization": f"Bearer {GITHUB_TOKEN}"},
+        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
     )
 
     if res.status_code != 200:
