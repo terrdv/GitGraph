@@ -22,7 +22,6 @@ def get_repos():
 
 @router.get("/{owner}/{repo}/tree")
 def get_repo_tree(owner: str, repo: str):
-    # 1. get repo info to find default branch
     repo_res = requests.get(
         f"https://api.github.com/repos/{owner}/{repo}",
         headers={"Authorization": f"Bearer {GITHUB_TOKEN}"},
@@ -44,7 +43,7 @@ def get_repo_tree(owner: str, repo: str):
 
     tree_data = tree_res.json()["tree"]
 
-    # 3. return only useful info
+    # return only useful info
     return [
         {"path": item["path"], "type": item["type"]}
         for item in tree_data
