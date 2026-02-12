@@ -47,7 +47,7 @@ async def get_repo_tree(owner: str, repo: str):
         for item in tree_data
     ]
 
-
+#file?path=....
 @router.get("/{owner}/{repo}/file")
 async def get_file(owner: str, repo: str, path: str):
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
