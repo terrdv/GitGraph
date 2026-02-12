@@ -15,7 +15,7 @@ class Settings:
 
     # Server config
     HOST = "127.0.0.1"
-    PORT = os.getenv("PORT")
+    PORT = int(os.getenv("PORT"))
     RELOAD: bool = True
     
 
