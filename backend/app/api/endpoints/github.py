@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 from app.core.config import settings
 from app.schemas.node import Node
+from app.services.build_tree import build_tree
 import base64
 router = APIRouter()
 
@@ -46,7 +47,8 @@ async def get_repo_tree(owner: str, repo: str):
     # 2. Insert files as nodes, 
     # 3. Return new graph
     
-    # return only useful info
+    return build_tree(tree_data)
+
     return [
         {"path": item["path"], "type": item["type"]}
         for item in tree_data
