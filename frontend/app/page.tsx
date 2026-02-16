@@ -1,5 +1,8 @@
+"use client";
+
 import { RepoCard } from "./components/RepoCard";
-import { repositories } from "./data/repositories";
+import type { GitHubRepository } from "./data/repositories";
+import { useEffect, useState } from "react";
 
 const sidebarItems = [
   "Overview",
@@ -11,6 +14,32 @@ const sidebarItems = [
 ];
 
 export default function Home() {
+  const [repos, setRepos] = useState<GitHubRepository[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchRepos() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const res = await fetch("/api/repo");
+        if (!res.ok) {
+          setError(`Failed to fetch repositories: ${res.status} ${res.statusText}`);
+          return;
+        }
+        const data = await res.json();
+        setRepos(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Error fetching repositories:", error);
+        setError("Error fetching repositories.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchRepos();
+  }, []);
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900">
       <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-[240px_1fr]">
@@ -57,9 +86,21 @@ export default function Home() {
               aria-label="Repository grid"
               className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
             >
-              {repositories.map((repo) => (
+              {isLoading && (
+                <p className="text-sm font-medium text-zinc-500">Loading repositories...</p>
+              )}
+
+              {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
+              {!isLoading && !error && repos.length === 0 && (
+                <p className="text-sm font-medium text-zinc-500">No repositories found.</p>
+              )}
+
+              {!isLoading &&
+                !error &&
+                repos.map((repo) => (
                 <RepoCard key={repo.id} repo={repo} />
-              ))}
+                ))}
             </section>
           </main>
         </div>
@@ -67,4 +108,3 @@ export default function Home() {
     </div>
   );
 }
-
