@@ -2,7 +2,7 @@ import requests
 from fastapi import APIRouter, HTTPException
 from fastapi import Query
 from pydantic import BaseModel
-
+from app.db.database import add_user
 from app.core.config import settings
 
 router = APIRouter()
@@ -59,8 +59,26 @@ async def exchange_github_code(payload: GitHubCodeExchangeRequest):
     if token_res.status_code != 200 or "access_token" not in data:
         raise HTTPException(status_code=400, detail=data)
 
+    access_token = data["access_token"]
+    user_res = requests.get(
+        "https://api.github.com/user",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/vnd.github+json",
+        },
+        timeout=15,
+    )
+    user_data = user_res.json()
+    username = user_data.get("login") if user_res.status_code == 200 else None
+
+    add_user(username)
+
+    if not username:
+        raise HTTPException(status_code=400, detail={"error": "Failed to fetch GitHub username", "github_response": user_data})
+
     return {
-        "access_token": data["access_token"],
+        "access_token": access_token,
         "token_type": data.get("token_type", "bearer"),
         "scope": data.get("scope", ""),
+        "username": username,
     }

@@ -20,7 +20,7 @@ class Settings:
     HOST = "127.0.0.1"
     PORT = int(os.getenv("PORT"))
     RELOAD: bool = True
-    
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
 
     # CORS config
     CORS_ORIGINS: list[str] = ["*"]
