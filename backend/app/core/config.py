@@ -12,6 +12,9 @@ class Settings:
 
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY")
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN")
+    GITHUB_CLIENT_ID: str = os.getenv("GITHUB_CLIENT_ID")
+    GITHUB_CLIENT_SECRET: str = os.getenv("GITHUB_CLIENT_SECRET")
+    GITHUB_REDIRECT_URI: str = os.getenv("GITHUB_REDIRECT_URI")
 
     # Server config
     HOST = "127.0.0.1"

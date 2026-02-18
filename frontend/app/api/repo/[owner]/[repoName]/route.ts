@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 const BASE_URL = process.env.SERVER_BASE_URL!;
 
 export async function GET(req: Request,
-    context: { params: Promise<{ owner: string, repo: string }> }
+    context: { params: Promise<{ owner: string, repoName: string }> }
 ) {
     try {
-        const { owner, repo } = await context.params;
-        const res = await fetch(`${BASE_URL}/${owner}/${repo}/tree`);
+        const { owner, repoName } = await context.params;
+        const authorization = req.headers.get("authorization");
+        const headers: HeadersInit = authorization ? { Authorization: authorization } : {};
+
+        const res = await fetch(`${BASE_URL}/repos/${owner}/${repoName}/tree`, { headers });
         if (!res.ok) {
             console.error(`Failed to fetch repository data: ${res.status} ${res.statusText}`);
             return NextResponse.json({ error: 'Failed to fetch repository data' }, { status: res.status });

@@ -1,30 +1,50 @@
-import os
 import requests
 from fastapi import APIRouter
 from fastapi import HTTPException
+from fastapi import Request
 from app.core.config import settings
-from app.schemas.node import Node
 from app.services.build_tree import build_tree
 import base64
 router = APIRouter()
 
 
+def github_auth_headers(request: Request) -> dict[str, str]:
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+    else:
+        token = settings.GITHUB_TOKEN
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing GitHub token. Provide Authorization: Bearer <token>.",
+        )
+
+    return {"Authorization": f"Bearer {token}"}
+
 
 
 @router.get("/")
-async def get_repos():
+async def get_repos(request: Request):
     res = requests.get(
         "https://api.github.com/user/repos",
-        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
+        headers=github_auth_headers(request),
+        timeout=15,
     )
+    if res.status_code != 200:
+        raise HTTPException(status_code=res.status_code, detail=res.json())
     return res.json()
 
 
 @router.get("/{owner}/{repo}/tree")
-async def get_repo_tree(owner: str, repo: str):
+async def get_repo_tree(owner: str, repo: str, request: Request):
+    headers = github_auth_headers(request)
+
     repo_res = requests.get(
         f"https://api.github.com/repos/{owner}/{repo}",
-        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
+        headers=headers,
+        timeout=15,
     )
 
     if repo_res.status_code != 200:
@@ -35,7 +55,8 @@ async def get_repo_tree(owner: str, repo: str):
     # 2. get full recursive tree
     tree_res = requests.get(
         f"https://api.github.com/repos/{owner}/{repo}/git/trees/{default_branch}?recursive=1",
-        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
+        headers=headers,
+        timeout=15,
     )
 
     if tree_res.status_code != 200:
@@ -49,19 +70,16 @@ async def get_repo_tree(owner: str, repo: str):
     
     return build_tree(tree_data)
 
-    return [
-        {"path": item["path"], "type": item["type"]}
-        for item in tree_data
-    ]
 
 #file?path=....
 @router.get("/{owner}/{repo}/file")
-async def get_file(owner: str, repo: str, path: str):
+async def get_file(owner: str, repo: str, path: str, request: Request):
     url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
 
     res = requests.get(
         url,
-        headers={"Authorization": f"Bearer {settings.GITHUB_TOKEN}"},
+        headers=github_auth_headers(request),
+        timeout=15,
     )
 
     if res.status_code != 200:
