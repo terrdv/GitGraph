@@ -2,7 +2,7 @@ import requests
 from fastapi import APIRouter, HTTPException
 from fastapi import Query
 from pydantic import BaseModel
-from app.db.database import add_user
+from app.db.users_db import create_user_with_token
 from app.core.config import settings
 
 router = APIRouter()
@@ -71,7 +71,7 @@ async def exchange_github_code(payload: GitHubCodeExchangeRequest):
     user_data = user_res.json()
     username = user_data.get("login") if user_res.status_code == 200 else None
 
-    add_user(username)
+    create_user_with_token(username, access_token)
 
     if not username:
         raise HTTPException(status_code=400, detail={"error": "Failed to fetch GitHub username", "github_response": user_data})

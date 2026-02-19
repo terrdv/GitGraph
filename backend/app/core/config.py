@@ -22,6 +22,9 @@ class Settings:
     RELOAD: bool = True
     DATABASE_URL: str = os.getenv("DATABASE_URL")
 
+    # Encryption
+    FERNET_KEY: str = os.getenv("FERNET_KEY")
+
     # CORS config
     CORS_ORIGINS: list[str] = ["*"]
     CORS_ALLOW_CREDENTIALS: bool = True
