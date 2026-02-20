@@ -1,15 +1,27 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 const BASE_URL = process.env.SERVER_BASE_URL!;
+const ACCESS_TOKEN_COOKIE = "github_access_token";
 
-export async function GET(req: Request,
+export async function GET(
+    req: NextRequest,
     context: { params: Promise<{ owner: string, repoName: string }> }
 ) {
     try {
         const { owner, repoName } = await context.params;
         const authorization = req.headers.get("authorization");
-        const headers: HeadersInit = authorization ? { Authorization: authorization } : {};
+        const cookieToken = req.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
+        const headerToken = authorization?.toLowerCase().startsWith("bearer ")
+            ? authorization
+            : null;
+        const token = headerToken ?? (cookieToken ? `Bearer ${cookieToken}` : null);
 
-        const res = await fetch(`${BASE_URL}/repos/${owner}/${repoName}/tree`, { headers });
+        if (!token) {
+            return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+        }
+
+        const res = await fetch(`${BASE_URL}/repos/${owner}/${repoName}/tree`, {
+            headers: { Authorization: token },
+        });
         if (!res.ok) {
             console.error(`Failed to fetch repository data: ${res.status} ${res.statusText}`);
             return NextResponse.json({ error: 'Failed to fetch repository data' }, { status: res.status });

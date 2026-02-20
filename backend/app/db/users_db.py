@@ -14,18 +14,26 @@ engine: Engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 from sqlalchemy import text
 
 def create_user_with_token(username: str, token: str):
-
     token = encrypt_token(token)
+
     with engine.begin() as connection:
         connection.execute(
             text("""
-                WITH new_user AS (
+                WITH inserted_user AS (
                     INSERT INTO users (username)
                     VALUES (:username)
+                    ON CONFLICT (username) DO NOTHING
                     RETURNING id
+                ),
+                selected_user AS (
+                    SELECT id FROM inserted_user
+                    UNION
+                    SELECT id FROM users WHERE username = :username
                 )
                 INSERT INTO access_tokens (user_id, token)
-                SELECT id, :token FROM new_user
+                SELECT id, :token FROM selected_user
+                ON CONFLICT (user_id)
+                DO UPDATE SET token = EXCLUDED.token;
             """),
             {"username": username, "token": token}
         )
