@@ -4,7 +4,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 ### Interactive Repository Graph
 - Visualizes files, folders, and relationships using a dynamic node-edge graph  
