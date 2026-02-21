@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const BASE_URL = process.env.SERVER_BASE_URL!;
-const ACCESS_TOKEN_COOKIE = "github_access_token";
+const SESSION_COOKIE = "gitgraph_session";
 const USERNAME_COOKIE = "github_username";
 
 export async function POST(req: Request) {
@@ -21,19 +21,32 @@ export async function POST(req: Request) {
       data = { error: raw || "Unexpected response from auth server." };
     }
 
-    const response = NextResponse.json(data, { status: res.status });
+    const responseBody: Record<string, unknown> =
+      typeof data === "object" && data !== null ? { ...(data as Record<string, unknown>) } : {};
 
-    if (
+    const hasSessionId =
       res.ok &&
       typeof data === "object" &&
       data !== null &&
-      "access_token" in data &&
-      typeof (data as { access_token?: unknown }).access_token === "string"
-    ) {
-      const typedData = data as { access_token: string; username?: string };
+      "session_id" in data &&
+      typeof (data as { session_id?: unknown }).session_id === "string";
+
+    if (hasSessionId) {
+      const typedData = data as { session_id: string; username?: string };
+      // Never expose session ids to browser JavaScript.
+      delete responseBody.session_id;
+      if (!("username" in responseBody) && typeof typedData.username === "string") {
+        responseBody.username = typedData.username;
+      }
+    }
+
+    const response = NextResponse.json(responseBody, { status: res.status });
+
+    if (hasSessionId) {
+      const typedData = data as { session_id: string; username?: string };
       response.cookies.set({
-        name: ACCESS_TOKEN_COOKIE,
-        value: typedData.access_token,
+        name: SESSION_COOKIE,
+        value: typedData.session_id,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -53,6 +66,9 @@ export async function POST(req: Request) {
         });
       }
     }
+
+    // Cleanup legacy deployments that used token cookies.
+    response.cookies.delete("github_access_token");
 
     return response;
   } catch (error) {

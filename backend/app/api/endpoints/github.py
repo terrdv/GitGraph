@@ -2,7 +2,7 @@ import requests
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import Request
-from app.core.config import settings
+from app.db.users_db import get_decrypted_token_for_session
 from app.services.build_tree import build_tree
 import base64
 router = APIRouter()
@@ -13,12 +13,13 @@ def github_auth_headers(request: Request) -> dict[str, str]:
     if auth_header.lower().startswith("bearer "):
         token = auth_header.split(" ", 1)[1].strip()
     else:
-        token = settings.GITHUB_TOKEN
+        session_id = request.headers.get("x-session-id", "").strip()
+        token = get_decrypted_token_for_session(session_id) if session_id else None
 
     if not token:
         raise HTTPException(
             status_code=401,
-            detail="Missing GitHub token. Provide Authorization: Bearer <token>.",
+            detail="Missing GitHub credentials.",
         )
 
     return {"Authorization": f"Bearer {token}"}
@@ -94,5 +95,3 @@ async def get_file(owner: str, repo: str, path: str, request: Request):
         "path": path,
         "content": content,
     }
-
-

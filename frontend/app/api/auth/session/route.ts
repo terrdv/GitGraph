@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ACCESS_TOKEN_COOKIE = "github_access_token";
+const SESSION_COOKIE = "gitgraph_session";
 const USERNAME_COOKIE = "github_username";
 
 export async function GET(req: NextRequest) {
-  const accessToken = req.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
+  const sessionId = req.cookies.get(SESSION_COOKIE)?.value;
   const username = req.cookies.get(USERNAME_COOKIE)?.value ?? null;
 
   return NextResponse.json({
-    authenticated: Boolean(accessToken),
+    authenticated: Boolean(sessionId),
     username,
   });
 }

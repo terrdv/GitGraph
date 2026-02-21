@@ -1,8 +1,10 @@
 import requests
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi import Query
 from pydantic import BaseModel
 from app.db.users_db import create_user_with_token
+from app.db.users_db import create_session_for_username
+from app.db.users_db import delete_session
 from app.core.config import settings
 
 router = APIRouter()
@@ -76,9 +78,19 @@ async def exchange_github_code(payload: GitHubCodeExchangeRequest):
     if not username:
         raise HTTPException(status_code=400, detail={"error": "Failed to fetch GitHub username", "github_response": user_data})
 
+    session_id = create_session_for_username(username)
+    if not session_id:
+        raise HTTPException(status_code=500, detail={"error": "Failed to create session"})
+
     return {
-        "access_token": access_token,
-        "token_type": data.get("token_type", "bearer"),
-        "scope": data.get("scope", ""),
+        "session_id": session_id,
         "username": username,
     }
+
+
+@router.post("/logout")
+async def logout(request: Request):
+    session_id = request.headers.get("x-session-id", "").strip()
+    if session_id:
+        delete_session(session_id)
+    return {"ok": True}

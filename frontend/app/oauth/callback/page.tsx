@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type ExchangeResponse = {
-  access_token?: string;
-  token_type?: string;
-  scope?: string;
+  username?: string;
   detail?: string;
   error?: string;
 };
@@ -42,7 +40,7 @@ export default function OAuthCallbackPage() {
       });
       const exchangeData = (await exchangeRes.json()) as ExchangeResponse;
 
-      if (!exchangeRes.ok || !exchangeData.access_token) {
+      if (!exchangeRes.ok) {
         setStatus("Code exchange failed.");
         setErrorDetail(exchangeData?.detail || exchangeData?.error || null);
         return;
