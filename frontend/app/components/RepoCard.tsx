@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import type { GitHubRepository } from "../data/repositories";
 
 type RepoCardProps = {
@@ -6,6 +8,7 @@ type RepoCardProps = {
 };
 
 export function RepoCard({ repo }: RepoCardProps) {
+  const router = useRouter();
   const updatedDate = new Date(repo.updated_at).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -13,11 +16,10 @@ export function RepoCard({ repo }: RepoCardProps) {
   });
 
   return (
-    <Link
-      href={repo.html_url}
-      target="_blank"
-      rel="noreferrer"
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2"
+    <button
+      type="button"
+      onClick={() => router.push(`/repositories/${repo.owner.login}/${repo.name}`)}
+      className="group flex h-full w-full cursor-pointer appearance-none flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-2"
     >
       <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-6 py-4">
         <p className="text-sm font-medium text-zinc-700">{repo.owner.login}</p>
@@ -49,6 +51,6 @@ export function RepoCard({ repo }: RepoCardProps) {
           Open Repository
         </span>
       </div>
-    </Link>
+    </button>
   );
 }

@@ -11,6 +11,7 @@ export type GitHubRepository = {
   description: string | null;
   updated_at: string;
   stargazers_count: number;
+  watchers_count?: number;
   forks_count: number;
   language: string | null;
   owner: GitHubRepositoryOwner;

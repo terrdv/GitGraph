@@ -9,9 +9,9 @@ type ExchangeResponse = {
   error?: string;
 };
 
-export default function OAuthCallbackPage() {
+export default function LoginCallbackPage() {
   const router = useRouter();
-  const [status, setStatus] = useState("Processing callback...");
+  const [status, setStatus] = useState("Completing GitHub sign-in...");
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,34 +19,31 @@ export default function OAuthCallbackPage() {
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
       const state = url.searchParams.get("state");
-      const savedState = sessionStorage.getItem("github_oauth_state");
 
       if (!code) {
         setStatus("Missing code in callback URL.");
         return;
       }
 
-      if (savedState && state !== savedState) {
-        setStatus("State mismatch. OAuth callback was rejected.");
+      if (!state) {
+        setStatus("State is missing in callback URL.");
         return;
       }
-
-      setStatus("Exchanging GitHub code...");
 
       const exchangeRes = await fetch("/api/auth/github/exchange", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, state }),
       });
       const exchangeData = (await exchangeRes.json()) as ExchangeResponse;
 
       if (!exchangeRes.ok) {
-        setStatus("Code exchange failed.");
+        setStatus("Sign-in failed.");
         setErrorDetail(exchangeData?.detail || exchangeData?.error || null);
         return;
       }
 
-      setStatus("Sign-in successful. Redirecting...");
+      setStatus("Sign-in successful. Redirecting to dashboard...");
       router.replace("/");
     }
 
@@ -58,10 +55,18 @@ export default function OAuthCallbackPage() {
   }, [router]);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-start justify-center gap-4 px-6 py-10">
-      <h1 className="text-3xl font-semibold">GitHub OAuth Callback</h1>
-      <p className="text-sm text-zinc-600">{status}</p>
-      {errorDetail && <p className="text-sm text-red-600">{errorDetail}</p>}
+    <main className="min-h-screen bg-[#0d1117] p-4 text-white">
+      <section className="mx-auto flex min-h-screen w-full max-w-2xl items-center">
+        <div className="w-full rounded-xl border border-gray-700 bg-[#161b22] p-6 shadow-xl md:p-8">
+          <h1 className="text-2xl font-semibold md:text-3xl">Signing You In</h1>
+          <p className="mt-4 text-sm text-slate-100/90">{status}</p>
+          {errorDetail && (
+            <p className="mt-4 rounded-md border border-red-300/50 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+              {errorDetail}
+            </p>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

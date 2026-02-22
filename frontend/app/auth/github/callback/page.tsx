@@ -1,3 +1,3 @@
-import OAuthCallbackPage from "../../../oauth/callback/page";
+import LoginCallbackPage from "../../../login/callback/page";
 
-export default OAuthCallbackPage;
+export default LoginCallbackPage;

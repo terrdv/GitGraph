@@ -1,16 +1,30 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const BASE_URL = process.env.SERVER_BASE_URL!;
 const SESSION_COOKIE = "gitgraph_session";
 const USERNAME_COOKIE = "github_username";
+const OAUTH_STATE_COOKIE = "github_oauth_state";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = (await req.json()) as { code?: unknown; state?: unknown };
+    const code = typeof body.code === "string" ? body.code : "";
+    const incomingState = typeof body.state === "string" ? body.state : "";
+    const expectedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value ?? "";
+
+    if (!code || !incomingState || !expectedState || incomingState !== expectedState) {
+      const invalidStateResponse = NextResponse.json(
+        { error: "Invalid OAuth state." },
+        { status: 400 },
+      );
+      invalidStateResponse.cookies.delete(OAUTH_STATE_COOKIE);
+      return invalidStateResponse;
+    }
+
     const res = await fetch(`${BASE_URL}/auth/github/exchange`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ code }),
     });
 
     const raw = await res.text();
@@ -69,6 +83,8 @@ export async function POST(req: Request) {
 
     // Cleanup legacy deployments that used token cookies.
     response.cookies.delete("github_access_token");
+    // One-time state cookie; remove after exchange attempt.
+    response.cookies.delete(OAUTH_STATE_COOKIE);
 
     return response;
   } catch (error) {
