@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GitGraph Frontend
 
-## Getting Started
+Next.js frontend for GitGraph. It provides GitHub login, repository browsing, and interactive repository graph visualization.
 
-First, run the development server:
+## Features
+
+- GitHub OAuth sign-in flow with CSRF state validation
+- Session-based auth via secure HTTP-only cookies
+- Dashboard showing authenticated user's repositories
+- Search/filter repositories and quick "recently viewed" list
+- Import repository by GitHub URL
+- Interactive repo graph visualization with expand/collapse folders
+- Node details panel with file/folder context text
+
+## App Routes
+
+- `/login`
+  - GitHub sign-in page.
+- `/login/callback`
+  - Completes OAuth exchange and redirects to dashboard.
+- `/auth/github/callback`
+  - Alias route that reuses `/login/callback`.
+- `/`
+  - Authenticated dashboard of repositories.
+- `/repositories/[owner]/[repoName]`
+  - Repository graph visualization page.
+
+## Frontend API Routes (Next.js)
+
+These routes proxy to the backend (`SERVER_BASE_URL`) and manage cookies.
+
+- `GET /api/auth/session`
+  - Returns `{ authenticated, username }` based on cookies.
+- `GET /api/auth/github/login-url`
+  - Gets OAuth URL from backend and sets `github_oauth_state` cookie.
+- `POST /api/auth/github/exchange`
+  - Validates OAuth state, exchanges code via backend, sets session cookies.
+- `POST /api/auth/logout`
+  - Invalidates backend session and clears auth cookies.
+- `GET /api/repo`
+  - Fetches authenticated user's GitHub repositories.
+- `GET /api/repo/[owner]/[repoName]`
+  - Fetches repository tree graph payload from backend.
+
+## Setup
+
+### 1. Prerequisites
+
+- Node.js 20+
+- Running backend API
+
+### 2. Install dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+### 3. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Set:
+
+- `SERVER_BASE_URL=http://127.0.0.1:<backend_port>`
+
+Example:
+
+- `SERVER_BASE_URL=http://127.0.0.1:8000`
+
+### 4. Run the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `http://localhost:3000`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Cookie Usage
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `gitgraph_session` (HTTP-only): backend session id
+- `github_username` (HTTP-only): username display helper
+- `github_oauth_state` (HTTP-only, short-lived): OAuth CSRF protection

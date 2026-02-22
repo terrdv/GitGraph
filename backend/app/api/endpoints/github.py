@@ -51,7 +51,8 @@ async def get_repo_tree(owner: str, repo: str, request: Request):
     if repo_res.status_code != 200:
         raise HTTPException(status_code=repo_res.status_code, detail=repo_res.json())
 
-    default_branch = repo_res.json()["default_branch"]
+    repo_data = repo_res.json()
+    default_branch = repo_data["default_branch"]
 
     # 2. get full recursive tree
     tree_res = requests.get(
@@ -68,9 +69,14 @@ async def get_repo_tree(owner: str, repo: str, request: Request):
     # 1. Filter by type tree, then set up directories as a list of nodes
     # 2. Insert files as nodes, 
     # 3. Return new graph
-    
-    return build_tree(tree_data)
-    
+
+    graph = build_tree(tree_data)
+    return {
+        "repo_id": repo_data.get("id"),
+        "nodes": graph.nodes,
+        "edges": graph.edges,
+    }
+
 
 
 #file?path=....
