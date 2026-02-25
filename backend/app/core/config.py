@@ -18,7 +18,7 @@ class Settings:
     FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL")
 
     # Server config
-    HOST = "127.0.0.1"
+    HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT"))
     RELOAD: bool = True
     DATABASE_URL: str = os.getenv("DATABASE_URL")
