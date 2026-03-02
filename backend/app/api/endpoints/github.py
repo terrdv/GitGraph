@@ -2,7 +2,7 @@ import requests
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import Request
-from app.db.users_db import get_decrypted_token_for_session
+from app.db.users import get_decrypted_token_for_session
 from app.services.build_tree import build_tree
 import base64
 router = APIRouter()

@@ -3,9 +3,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi import Query
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from app.db.users_db import create_user_with_token
-from app.db.users_db import create_session_for_username
-from app.db.users_db import delete_session
+from app.db.users import create_user_with_token, create_session_for_username, delete_session
 from app.core.config import settings
 
 router = APIRouter()
