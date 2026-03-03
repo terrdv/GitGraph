@@ -10,7 +10,7 @@ class Settings:
     # API keys
 
 
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY")
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN")
     GITHUB_CLIENT_ID: str = os.getenv("GITHUB_CLIENT_ID")
     GITHUB_CLIENT_SECRET: str = os.getenv("GITHUB_CLIENT_SECRET")
