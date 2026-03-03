@@ -1,10 +1,22 @@
 import base64
+import os
 from urllib.parse import quote
+from dataclasses import dataclass
+from .metadata import NodeMetadata
 
 import requests
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.services.fernet import decrypt_token
 
+@dataclass(frozen=True)
+class NodeChunk:
+    """A single chunk for a node, including its positional index."""
+
+    chunk_id: str
+    chunk_index: int
+    text: str
+    metadata: NodeMetadata
+    
 
 class NodeProcessor:
     """
@@ -71,11 +83,35 @@ class NodeProcessor:
         return self.splitter.split_text(content)
 
 
-    def process_node(self, owner, repo, path):
-        """Fetches a node's contents and, splits into chunks"""
+    def process_node(self, owner: str, repo: str, path: str) -> list[NodeChunk]:
+        """Fetch a node's content and return metadata-rich chunk objects."""
         try:
             content = self.fetch_contents(owner, repo, path)
-            return self.create_chunks(content)
+            chunks = self.create_chunks(content)
+
+            repo_id = f"{owner}/{repo}"
+            node_uuid = path
+            ext = os.path.splitext(path)[1]
+            file_type = ext.lstrip(".") if ext else None
+            metadata = NodeMetadata(
+                repo_id=repo_id,
+                node_uuid=node_uuid,
+                node_path=path,
+                file_type=file_type,
+            )
+
+            node_chunks: list[NodeChunk] = []
+            for chunk_index, text in enumerate(chunks):
+                node_chunks.append(
+                    NodeChunk(
+                        chunk_id=f"{node_uuid}:{chunk_index}",
+                        chunk_index=chunk_index,
+                        text=text,
+                        metadata=metadata,
+                    )
+                )
+
+            return node_chunks
         except Exception as e:
             raise RuntimeError(f"Missing file content for {path}") from e
         

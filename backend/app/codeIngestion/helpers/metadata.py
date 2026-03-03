@@ -29,7 +29,6 @@ class NodeMetadata:
     repo_id: str
     node_uuid: str
     node_path: str
-    chunk_index: int
     file_type: str | None = None
 
     def to_dict(self) -> dict:
