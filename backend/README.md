@@ -10,11 +10,7 @@ FastAPI backend for GitGraph. It handles GitHub OAuth, session management, repos
 - Repository listing from the authenticated GitHub user
 - Repository tree graph generation (`nodes` and `edges`) for visualization
 - File content fetch endpoint for selected repository files
-- Gemini analysis endpoint scaffold
-
-## Architecture
-
-
+- RAG-powered LLM assistant for codebase navigation
 
 
 ### Auth
@@ -87,7 +83,7 @@ Required variables in `.env`:
 - `GITHUB_CLIENT_SECRET`
 - `GITHUB_REDIRECT_URI`
 - `FRONTEND_BASE_URL`
-- `GEMINI_API_KEY` (required for `/analyze/*`)
+- `OPENAI_API_KEY`
 
 Generate a Fernet key:
 

@@ -297,6 +297,7 @@ export function ProjectGraph({ nodes, edges, onNodeClick }: ProjectGraphProps) {
         <Background color="#30363d" gap={16} />
         <Controls />
         <MiniMap
+          position="top-right"
           nodeColor={(node) => ((node.data as CustomData).kind === "folder" ? "#2563eb" : "#9333ea")}
           maskColor="rgba(0, 0, 0, 0.3)"
           className="border border-gray-700 bg-[#161b22]"

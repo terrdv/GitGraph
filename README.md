@@ -45,22 +45,18 @@
 - FastAPI (Python)  
 - GitHub REST API  
 - LangChain (chunking + LLM orchestration)  
+- AWS RDS (Database)
 - Redis (summary caching)  
 
 ### AI
-- Gemini / OpenAI LLMs for:
+- OpenAI LLMs for:
   - File summaries  
   - Architecture explanations  
   - Semantic understanding  
+  - Model-based guardrails
 
 ### Infrastructure (planned / optional)
 - Docker containerization  
-- Vercel (frontend deployment)  
-- Railway / Render / AWS (backend deployment)  
-
----
-
-## 🚀 Getting Started
 
 
 

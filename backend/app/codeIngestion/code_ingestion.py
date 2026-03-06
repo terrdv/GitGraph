@@ -1,6 +1,7 @@
 """
 Main orchestrator for repo ingestion.
 """
+import os
 from typing import Any
 
 from app.core.config import settings
@@ -46,6 +47,17 @@ class RepositoryIngestionOrchestrator:
 
 
     
+    def _build_embedding_text(self, chunk_text: str, path: str) -> str:
+        """Prefix each chunk with stable source path context for retrieval."""
+        filename = os.path.basename(path) or path
+        folder = os.path.dirname(path) or "."
+        return (
+            f"Repository path: {path}\n"
+            f"Filename: {filename}\n"
+            f"Folder: {folder}\n\n"
+            f"{chunk_text}"
+        )
+
     def ingest_node(self, owner: str, repo: str, path: str) -> list[Document]:
 
         chunks = self.processor.process_node(owner, repo, path)
@@ -58,7 +70,7 @@ class RepositoryIngestionOrchestrator:
             metadata["chunk_index"] = chunk.chunk_index
             documents.append(
                 Document(
-                    page_content=chunk.text,
+                    page_content=self._build_embedding_text(chunk_text=chunk.text, path=path),
                     metadata=metadata,
                 )
             )

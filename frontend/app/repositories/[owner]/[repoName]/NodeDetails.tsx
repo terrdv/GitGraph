@@ -3,9 +3,11 @@ import type { DetailNode } from "./types";
 
 type NodeDetailsProps = {
   node: DetailNode | null;
+  isLoading?: boolean;
+  error?: string | null;
 };
 
-export function NodeDetails({ node }: NodeDetailsProps) {
+export function NodeDetails({ node, isLoading = false, error = null }: NodeDetailsProps) {
   if (!node) {
     return (
       <div className="flex h-full w-96 items-center justify-center border-r border-gray-700 bg-[#0d1117] p-6">
@@ -47,7 +49,14 @@ export function NodeDetails({ node }: NodeDetailsProps) {
             <Sparkles className="h-4 w-4 text-purple-400" />
             <h3 className="font-semibold text-gray-100">Explanation</h3>
           </div>
-          <p className="text-sm leading-relaxed text-gray-300">{node.aiExplanation}</p>
+          {error ? (
+            <p className="text-sm leading-relaxed text-red-300">{error}</p>
+          ) : (
+            <p className="text-sm leading-relaxed text-gray-300">
+              {node.aiExplanation || (isLoading ? "Generating explanation..." : "No explanation available.")}
+              {isLoading && node.aiExplanation ? <span className="ml-1 animate-pulse text-gray-500">...</span> : null}
+            </p>
+          )}
         </div>
 
         {node.children.length > 0 && (

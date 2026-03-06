@@ -33,6 +33,9 @@ export function VisualizerView({
   const [isAsking, setIsAsking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
+  const [nodeExplanations, setNodeExplanations] = useState<Record<string, string>>({});
+  const [nodeExplanationLoadingId, setNodeExplanationLoadingId] = useState<string | null>(null);
+  const [nodeExplanationErrors, setNodeExplanationErrors] = useState<Record<string, string>>({});
 
   const nodeById = useMemo(
     () => new Map(graph.nodes.map((node) => [node.id, node])),
@@ -58,6 +61,8 @@ export function VisualizerView({
     if (!node) return null;
     const kind = asDetailType(node.file_type);
     const children = childrenById.get(node.id) ?? [];
+    const isCurrentNodeLoading = nodeExplanationLoadingId === node.id;
+    const cachedExplanation = nodeExplanations[node.id];
 
     return {
       id: node.id,
@@ -65,12 +70,14 @@ export function VisualizerView({
       path: node.path,
       type: kind,
       children,
-      aiExplanation:
-        kind === "folder"
-          ? `This directory groups ${children.length} direct item(s) and organizes related source files under ${node.path || "/"} .`
-          : `This file appears at ${node.path}. Select it to inspect structure context and run deeper analysis.`,
+      aiExplanation: cachedExplanation
+        ?? (isCurrentNodeLoading
+          ? ""
+          : kind === "folder"
+            ? `This directory groups ${children.length} direct item(s) and organizes related source files under ${node.path || "/"} .`
+            : `This file appears at ${node.path}. Select it to inspect structure context and run deeper analysis.`),
     };
-  }, [selectedNodeId, nodeById, childrenById]);
+  }, [selectedNodeId, nodeById, childrenById, nodeExplanations, nodeExplanationLoadingId]);
 
   const statusLabel =
     ingestionStatus === "running"
@@ -175,6 +182,82 @@ export function VisualizerView({
     }
   }
 
+  async function fetchNodeExplanation(nodeId: string) {
+    const node = nodeById.get(nodeId);
+    if (!node) return;
+    if (nodeExplanations[nodeId]) return;
+    if (nodeExplanationLoadingId === nodeId) return;
+
+    const kind = asDetailType(node.file_type);
+    const children = childrenById.get(nodeId) ?? [];
+    const query =
+      kind === "folder"
+        ? `Explain the purpose of the folder "${node.path || "/"}" in this repository, summarize what it contains, and describe how its contents fit the project. Direct children: ${children.map((child) => child.name).join(", ") || "none"}.`
+        : `Explain the purpose of file "${node.path}" in this repository, summarize its main responsibilities, and how it relates to nearby modules.`;
+
+    setNodeExplanationLoadingId(nodeId);
+    setNodeExplanationErrors((prev) => {
+      const next = { ...prev };
+      delete next[nodeId];
+      return next;
+    });
+
+    try {
+      const res = await fetch(
+        `/api/repo/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}/chat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        },
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        setNodeExplanationErrors((prev) => ({
+          ...prev,
+          [nodeId]: `Failed to generate explanation: ${errorText}`,
+        }));
+        return;
+      }
+
+      if (!res.body) {
+        setNodeExplanationErrors((prev) => ({
+          ...prev,
+          [nodeId]: "Failed to generate explanation: empty stream response.",
+        }));
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+        fullText += chunk;
+        setNodeExplanations((prev) => ({ ...prev, [nodeId]: fullText }));
+      }
+
+      if (!fullText.trim()) {
+        setNodeExplanationErrors((prev) => ({
+          ...prev,
+          [nodeId]: "No explanation returned for this node.",
+        }));
+      }
+    } catch {
+      setNodeExplanationErrors((prev) => ({
+        ...prev,
+        [nodeId]: "Failed to reach explanation endpoint.",
+      }));
+    } finally {
+      setNodeExplanationLoadingId((current) => (current === nodeId ? null : current));
+    }
+  }
+
   return (
     <div className="relative flex h-screen flex-col bg-[#0d1117]">
       <header className="border-b border-gray-700 bg-[#161b22]">
@@ -214,14 +297,21 @@ export function VisualizerView({
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <NodeDetails node={selectedNode} />
+        <NodeDetails
+          node={selectedNode}
+          isLoading={!!selectedNodeId && nodeExplanationLoadingId === selectedNodeId}
+          error={selectedNodeId ? nodeExplanationErrors[selectedNodeId] ?? null : null}
+        />
         <ProjectGraph
           nodes={graph.nodes}
           edges={graph.edges}
-          onNodeClick={(nodeId) => setSelectedNodeId(nodeId)}
+          onNodeClick={(nodeId) => {
+            setSelectedNodeId(nodeId);
+            void fetchNodeExplanation(nodeId);
+          }}
         />
       </div>
-      <div className="pointer-events-none absolute bottom-4 left-4 z-20 w-[26rem]">
+      <div className="pointer-events-none absolute right-4 bottom-4 z-20 w-[26rem]">
         <div className="pointer-events-auto rounded-lg border border-gray-700 bg-[#11161d]/95 shadow-xl backdrop-blur">
           <div className="border-b border-gray-700 px-4 py-2">
             <h3 className="text-sm font-semibold text-gray-100">Repo Chat</h3>
