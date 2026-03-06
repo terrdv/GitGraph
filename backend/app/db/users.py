@@ -33,7 +33,9 @@ def create_user_with_token(username: str, token: str):
                 INSERT INTO access_tokens (user_id, token)
                 SELECT id, :token FROM selected_user
                 ON CONFLICT (user_id)
-                DO UPDATE SET token = EXCLUDED.token;
+                DO UPDATE SET
+                    token = EXCLUDED.token,
+                    updated_at = NOW();
             """),
             {"username": username, "token": token}
         )
@@ -64,12 +66,21 @@ def add_access_token(username: str, access_token: str) -> None:
         connection.execute(
             text(
                 """
-                INSERT INTO access_tokens (username, access_token)
-                VALUES (:username, :access_token)
-                ON CONFLICT (username) DO UPDATE SET access_token = EXCLUDED.access_token
+                WITH selected_user AS (
+                    SELECT id
+                    FROM users
+                    WHERE username = :username
+                    LIMIT 1
+                )
+                INSERT INTO access_tokens (user_id, token)
+                SELECT id, :token FROM selected_user
+                ON CONFLICT (user_id)
+                DO UPDATE SET
+                    token = EXCLUDED.token,
+                    updated_at = NOW()
                 """
             ),
-            {"username": username, "access_token": access_token},
+            {"username": username, "token": token},
         )
     
 def delete_user(username: str) -> None:

@@ -6,6 +6,31 @@ import { useRouter } from "next/navigation";
 import { Github, Link2, Clock, Star, GitFork, Eye, Search } from "lucide-react";
 
 const RECENT_REPOS_KEY = "gitgraph_recent_repos";
+const LANGUAGE_DOT_CLASS: Record<string, string> = {
+  typescript: "bg-blue-500",
+  javascript: "bg-yellow-400",
+  python: "bg-emerald-500",
+  java: "bg-orange-500",
+  go: "bg-cyan-400",
+  rust: "bg-amber-700",
+  "c++": "bg-pink-500",
+  c: "bg-slate-400",
+  "c#": "bg-violet-500",
+  php: "bg-indigo-500",
+  ruby: "bg-red-500",
+  swift: "bg-orange-400",
+  kotlin: "bg-fuchsia-500",
+  html: "bg-orange-600",
+  css: "bg-sky-500",
+  shell: "bg-lime-500",
+};
+
+function getLanguageDotClass(language: string | null): string {
+  if (!language) {
+    return "bg-gray-500";
+  }
+  return LANGUAGE_DOT_CLASS[language.toLowerCase()] ?? "bg-gray-500";
+}
 
 export default function Home() {
   const router = useRouter();
@@ -278,7 +303,9 @@ function RepoButtonCard({ repo, onClick }: { repo: GitHubRepository; onClick: ()
       </p>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-yellow-500" />
+          <span
+            className={`inline-block h-3 w-3 rounded-full ${getLanguageDotClass(repo.language)}`}
+          />
           <span className="text-xs text-gray-500">{repo.language ?? "Unknown"}</span>
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-500">

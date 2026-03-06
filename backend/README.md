@@ -101,20 +101,14 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 This service expects `users` and `access_tokens` tables to exist. `user_sessions` is auto-created at runtime.
 
-Minimal schema:
+psql "$DATABASE_URL" -f backend/app/db/migrations/001_extensions.sql
 
-```sql
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+psql "$DATABASE_URL" -f backend/app/db/migrations/002_users_access_tokens.sql
 
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  username TEXT UNIQUE NOT NULL
-);
+psql "$DATABASE_URL" -f backend/app/db/migrations/003_user_sessions.sql
 
-CREATE TABLE IF NOT EXISTS access_tokens (
-  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  token TEXT NOT NULL
-);
+psql "$DATABASE_URL" -f backend/app/db/migrations/004_repo_graph_tables.sql
+
 ```
 
 ### 5. Run the server

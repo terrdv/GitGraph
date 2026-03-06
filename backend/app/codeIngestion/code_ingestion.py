@@ -7,8 +7,11 @@ from app.core.config import settings
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_postgres import PGVector
+import logging
 
 from .helpers import NodeProcessor
+
+logger = logging.getLogger(__name__)
 
 class RepositoryIngestionOrchestrator:
     """
@@ -81,9 +84,14 @@ class RepositoryIngestionOrchestrator:
             if node_type != "blob" or not node_path:
                 continue
 
-            documents = self.ingest_node(owner, repo, node_path)
-            if documents:
-                vector_store.add_documents(documents)
-                total_documents += len(documents)
+            try:
+                documents = self.ingest_node(owner, repo, node_path)
+                if documents:
+                    vector_store.add_documents(documents)
+                    total_documents += len(documents)
+            except Exception as exc:
+                # Do not fail the full repo ingestion because one file is unreadable.
+                logger.warning("Skipping file during ingestion: %s (%s)", node_path, exc)
+                continue
 
         return total_documents

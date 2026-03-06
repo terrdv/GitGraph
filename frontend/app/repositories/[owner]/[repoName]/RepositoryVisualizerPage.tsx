@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { VisualizerView } from "./VisualizerView";
 import type { GraphPayload } from "./types";
@@ -18,6 +18,13 @@ export default function RepositoryVisualizerPage({
   const [graph, setGraph] = useState<GraphPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ingestionTriggered, setIngestionTriggered] = useState(false);
+  const ingestionKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    setIngestionTriggered(false);
+    ingestionKeyRef.current = null;
+  }, [owner, repoName]);
 
   useEffect(() => {
     async function loadRepoGraph() {
@@ -56,6 +63,45 @@ export default function RepositoryVisualizerPage({
 
     loadRepoGraph();
   }, [owner, repoName, router]);
+
+  useEffect(() => {
+    if (!graph || ingestionTriggered) {
+      return;
+    }
+
+    async function triggerIngestion() {
+      const ingestionKey = `${owner}/${repoName}`;
+      if (ingestionKeyRef.current === ingestionKey) {
+        return;
+      }
+      ingestionKeyRef.current = ingestionKey;
+
+      try {
+        const res = await fetch("/api/ingestion/repo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner,
+            repo: repoName,
+            graph,
+          }),
+        });
+
+        if (!res.ok) {
+          console.error(`Failed to trigger ingestion: ${res.status} ${res.statusText}`);
+          ingestionKeyRef.current = null;
+          return;
+        }
+
+        setIngestionTriggered(true);
+      } catch (ingestError) {
+        console.error("Failed to trigger ingestion:", ingestError);
+        ingestionKeyRef.current = null;
+      }
+    }
+
+    triggerIngestion();
+  }, [graph, ingestionTriggered, owner, repoName]);
 
   if (isLoading) {
     return (
