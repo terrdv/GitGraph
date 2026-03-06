@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { VisualizerView } from "./VisualizerView";
 import type { GraphPayload } from "./types";
 
+type IngestionStatus = "idle" | "running" | "success" | "error";
+
 type RepositoryVisualizerPageProps = {
   owner: string;
   repoName: string;
@@ -19,12 +21,28 @@ export default function RepositoryVisualizerPage({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ingestionTriggered, setIngestionTriggered] = useState(false);
+  const [ingestionStatus, setIngestionStatus] = useState<IngestionStatus>("idle");
+  const [ingestionProgress, setIngestionProgress] = useState(0);
   const ingestionKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     setIngestionTriggered(false);
+    setIngestionStatus("idle");
+    setIngestionProgress(0);
     ingestionKeyRef.current = null;
   }, [owner, repoName]);
+
+  useEffect(() => {
+    if (ingestionStatus !== "running") {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setIngestionProgress((prev) => Math.min(prev + 8, 92));
+    }, 350);
+
+    return () => clearInterval(timer);
+  }, [ingestionStatus]);
 
   useEffect(() => {
     async function loadRepoGraph() {
@@ -75,6 +93,8 @@ export default function RepositoryVisualizerPage({
         return;
       }
       ingestionKeyRef.current = ingestionKey;
+      setIngestionStatus("running");
+      setIngestionProgress(12);
 
       try {
         const res = await fetch("/api/ingestion/repo", {
@@ -89,13 +109,19 @@ export default function RepositoryVisualizerPage({
 
         if (!res.ok) {
           console.error(`Failed to trigger ingestion: ${res.status} ${res.statusText}`);
+          setIngestionStatus("error");
+          setIngestionProgress(100);
           ingestionKeyRef.current = null;
           return;
         }
 
+        setIngestionStatus("success");
+        setIngestionProgress(100);
         setIngestionTriggered(true);
       } catch (ingestError) {
         console.error("Failed to trigger ingestion:", ingestError);
+        setIngestionStatus("error");
+        setIngestionProgress(100);
         ingestionKeyRef.current = null;
       }
     }
@@ -126,5 +152,14 @@ export default function RepositoryVisualizerPage({
     );
   }
 
-  return <VisualizerView owner={owner} repoName={repoName} graph={graph} onBack={() => router.push("/")} />;
+  return (
+    <VisualizerView
+      owner={owner}
+      repoName={repoName}
+      graph={graph}
+      ingestionStatus={ingestionStatus}
+      ingestionProgress={ingestionProgress}
+      onBack={() => router.push("/")}
+    />
+  );
 }

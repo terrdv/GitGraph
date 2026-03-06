@@ -10,6 +10,8 @@ type VisualizerViewProps = {
   owner: string;
   repoName: string;
   graph: GraphPayload;
+  ingestionStatus: "idle" | "running" | "success" | "error";
+  ingestionProgress: number;
   onBack: () => void;
 };
 
@@ -17,7 +19,14 @@ function asDetailType(fileType: string): "folder" | "file" {
   return fileType === "tree" ? "folder" : "file";
 }
 
-export function VisualizerView({ owner, repoName, graph, onBack }: VisualizerViewProps) {
+export function VisualizerView({
+  owner,
+  repoName,
+  graph,
+  ingestionStatus,
+  ingestionProgress,
+  onBack,
+}: VisualizerViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const nodeById = useMemo(
@@ -58,6 +67,22 @@ export function VisualizerView({ owner, repoName, graph, onBack }: VisualizerVie
     };
   }, [selectedNodeId, nodeById, childrenById]);
 
+  const statusLabel =
+    ingestionStatus === "running"
+      ? "Ingesting"
+      : ingestionStatus === "success"
+        ? "Ingestion Complete"
+        : ingestionStatus === "error"
+          ? "Ingestion Failed"
+          : "Pending Ingestion";
+
+  const statusColor =
+    ingestionStatus === "success"
+      ? "bg-emerald-500"
+      : ingestionStatus === "error"
+        ? "bg-red-500"
+        : "bg-blue-500";
+
   return (
     <div className="flex h-screen flex-col bg-[#0d1117]">
       <header className="border-b border-gray-700 bg-[#161b22]">
@@ -76,6 +101,20 @@ export function VisualizerView({ owner, repoName, graph, onBack }: VisualizerVie
               <div>
                 <h2 className="text-lg font-semibold text-blue-400">{repoName}</h2>
                 <p className="text-xs text-gray-500">{owner}</p>
+              </div>
+            </div>
+            <div className="w-56">
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="text-gray-300">{statusLabel}</span>
+                <span className="text-gray-500">{Math.round(ingestionProgress)}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-gray-700">
+                <div
+                  className={`h-2 rounded-full transition-all duration-300 ${statusColor} ${
+                    ingestionStatus === "running" ? "animate-pulse" : ""
+                  }`}
+                  style={{ width: `${Math.min(ingestionProgress, 100)}%` }}
+                />
               </div>
             </div>
           </div>
