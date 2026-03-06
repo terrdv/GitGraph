@@ -32,14 +32,13 @@ class NodeProcessor:
             "\ntype ",
             "\nexport ",
             "\n\n",
-            "\n",
             " ",
             "",
         ]
         self.session = session
         self.splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1800,
-            chunk_overlap=240,
+            chunk_size=2200,
+            chunk_overlap=320,
             separators=chunk_separators,
             keep_separator=True,
             is_separator_regex=False,

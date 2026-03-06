@@ -24,6 +24,8 @@ IGNORED_EXTENSIONS = {
     ".yml",
     ".mjs",
     ".cjs",
+    ".ico",
+    ".lock",
 }
 
 IGNORED_FILENAMES = {

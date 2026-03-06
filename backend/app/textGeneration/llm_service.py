@@ -17,11 +17,11 @@ def stream_llm_response(query: str, thread_id: str, session_id: str):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
 
-    # 2. Setup Vector Store as Retriever
+    # Setup Vector Store as Retriever
     vector_store = PGVector(
         collection_name=thread_id,
         connection=settings.DATABASE_URL,
         embeddings=embeddings,
         use_jsonb=True,
     )
-    retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+    retriever = vector_store.as_retriever(search_kwargs={"k": 10})
