@@ -28,10 +28,7 @@
 
 ### Real-World Use Cases
 - Developer onboarding  
-- Hackathon repo exploration  
 - Open-source contribution  
-- Technical interview preparation  
-
 
 ---
 
