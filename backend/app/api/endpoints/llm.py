@@ -31,7 +31,7 @@ async def chat_with_repo(payload: ChatRequest, request: Request):
     try:
         answer = get_llm_response(
             query=payload.query.strip(),
-            thread_id=f"{payload.owner}/{payload.repo}",
+            repo_id=f"{payload.owner}/{payload.repo}",
             session_id=session_id,
         )
     except Exception as exc:
@@ -50,7 +50,7 @@ async def chat_with_repo_stream(payload: ChatRequest, request: Request):
     def token_generator():
         for token in stream_llm_response(
             query=payload.query.strip(),
-            thread_id=f"{payload.owner}/{payload.repo}",
+            repo_id=f"{payload.owner}/{payload.repo}",
             session_id=session_id,
         ):
             yield token

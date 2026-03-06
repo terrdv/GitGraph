@@ -12,12 +12,10 @@ FastAPI backend for GitGraph. It handles GitHub OAuth, session management, repos
 - File content fetch endpoint for selected repository files
 - Gemini analysis endpoint scaffold
 
-## API Endpoints
+## Architecture
 
-### Health
 
-- `GET /`
-  - Returns API status.
+
 
 ### Auth
 

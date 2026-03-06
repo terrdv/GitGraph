@@ -26,6 +26,7 @@ IGNORED_EXTENSIONS = {
     ".cjs",
     ".ico",
     ".lock",
+    ".toml"
 }
 
 IGNORED_FILENAMES = {
