@@ -54,8 +54,9 @@
   - Architecture explanations  
   - Semantic understanding  
   - Model-based guardrails
+  - Embeddings
 
-### Infrastructure (planned / optional)
+### Infrastructure
 - Docker containerization  
 
 

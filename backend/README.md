@@ -58,6 +58,7 @@ FastAPI backend for GitGraph. It handles GitHub OAuth, session management, repos
 
 - Python 3.11+
 - PostgreSQL database
+- Docker (optional)
 
 ### 2. Install dependencies
 
@@ -95,17 +96,14 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 This service expects `users` and `access_tokens` tables to exist. `user_sessions` is auto-created at runtime.
 
-psql "$DATABASE_URL" -f backend/app/db/migrations/001_extensions.sql
-
-psql "$DATABASE_URL" -f backend/app/db/migrations/002_users_access_tokens.sql
-
-psql "$DATABASE_URL" -f backend/app/db/migrations/003_user_sessions.sql
-
-psql "$DATABASE_URL" -f backend/app/db/migrations/004_repo_graph_tables.sql
-
+```bash
+psql "$DATABASE_URL" -f app/db/migrations/001_extensions.sql
+psql "$DATABASE_URL" -f app/db/migrations/002_users_access_tokens.sql
+psql "$DATABASE_URL" -f app/db/migrations/003_user_sessions.sql
+psql "$DATABASE_URL" -f app/db/migrations/004_repo_graph_tables.sql
 ```
 
-### 5. Run the server
+### 5. Run locally
 
 ```bash
 python main.py
@@ -115,6 +113,20 @@ Or with uvicorn:
 
 ```bash
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### 6. Run with Docker (from `backend/`)
+
+Build image:
+
+```bash
+docker build -t gitgraph-backend .
+```
+
+Run container:
+
+```bash
+docker run --rm -p 8000:8000 --env-file .env gitgraph-backend
 ```
 
 ## Notes
