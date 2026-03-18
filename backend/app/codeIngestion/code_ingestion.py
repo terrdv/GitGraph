@@ -8,6 +8,8 @@ from app.core.config import settings
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_postgres import PGVector
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 import logging
 
 from .helpers import NodeProcessor
@@ -43,6 +45,7 @@ class RepositoryIngestionOrchestrator:
         self.embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
         self.db_connection = settings.DATABASE_URL
+        self.engine: Engine = create_engine(self.db_connection, pool_pre_ping=True)
 
 
 
@@ -77,8 +80,36 @@ class RepositoryIngestionOrchestrator:
 
         return documents
 
+    def get_existing_embedding_count(self, owner: str, repo: str) -> int:
+        """Return the number of stored embeddings for a repo collection."""
+        collection_name = f"{owner}/{repo}"
+        query = text(
+            """
+            SELECT COUNT(e.id)
+            FROM langchain_pg_collection AS c
+            JOIN langchain_pg_embedding AS e
+              ON e.collection_id = c.uuid
+            WHERE c.name = :collection_name
+            """
+        )
+        with self.engine.begin() as connection:
+            result = connection.execute(
+                query,
+                {"collection_name": collection_name},
+            )
+            count = result.scalar_one()
+        return int(count or 0)
+
+    def repo_embeddings_exist(self, owner: str, repo: str) -> bool:
+        """Check whether the repo already has stored embeddings."""
+        return self.get_existing_embedding_count(owner, repo) > 0
+
     def ingest_repo_tree(self, owner: str, repo: str, tree_payload: dict[str, Any]) -> int:
         """Ingest all file nodes from the /tree payload into one repo collection."""
+        if self.repo_embeddings_exist(owner, repo):
+            logger.info("Skipping ingestion for %s/%s; embeddings already exist.", owner, repo)
+            return 0
+
         vector_store = PGVector(
             collection_name=f"{owner}/{repo}",
             connection=self.db_connection,

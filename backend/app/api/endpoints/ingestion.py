@@ -38,6 +38,18 @@ async def ingest_repo(request: Request, payload: IngestionRequest):
         encrypted_session = encrypt_token(github_token)
         orchestrator = RepositoryIngestionOrchestrator(session=encrypted_session)
 
+        existing_embeddings = orchestrator.get_existing_embedding_count(
+            owner=payload.owner,
+            repo=payload.repo,
+        )
+        if existing_embeddings > 0:
+            return IngestionResponse(
+                message="Repository embeddings already exist. Reusing stored collection.",
+                status="success",
+                thread_id=f"{payload.owner}/{payload.repo}",
+                chunks_processed=existing_embeddings,
+            )
+
         graph_payload = (
             payload.graph.model_dump()
             if hasattr(payload.graph, "model_dump")

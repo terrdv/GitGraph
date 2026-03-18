@@ -64,6 +64,7 @@ pydantic_core==2.41.5
 pyparsing==3.3.2
 python-dotenv==1.2.1
 PyYAML==6.0.3
+redis==7.3.0
 regex==2026.2.28
 requests==2.32.5
 requests-toolbelt==1.0.0

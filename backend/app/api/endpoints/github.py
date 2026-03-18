@@ -2,6 +2,7 @@ import requests
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import Request
+from app.db.repos import get_repo_graph, save_repo_graph
 from app.db.users import get_decrypted_token_for_session
 from app.services.build_tree import build_tree
 import base64
@@ -52,6 +53,15 @@ async def get_repo_tree(owner: str, repo: str, request: Request):
         raise HTTPException(status_code=repo_res.status_code, detail=repo_res.json())
 
     repo_data = repo_res.json()
+    repo_id = repo_data.get("id")
+    cached_graph = get_repo_graph(repo_id=repo_id)
+    if cached_graph is not None:
+        return {
+            "repo_id": repo_id,
+            "nodes": cached_graph.nodes,
+            "edges": cached_graph.edges,
+        }
+
     default_branch = repo_data["default_branch"]
 
     # 2. get full recursive tree
@@ -71,8 +81,14 @@ async def get_repo_tree(owner: str, repo: str, request: Request):
     # 3. Return new graph
 
     graph = build_tree(tree_data)
+    save_repo_graph(
+        repo_id=repo_id,
+        owner=owner,
+        repo_name=repo,
+        graph=graph,
+    )
     return {
-        "repo_id": repo_data.get("id"),
+        "repo_id": repo_id,
         "nodes": graph.nodes,
         "edges": graph.edges,
     }
